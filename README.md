@@ -10,7 +10,7 @@ already in it — what is **missing** from a lab folder is the work, and that is
 |---|---|---|
 | `lab-01/` | containers and the image | **Thu 12 Nov** |
 | `lab-02/` | test, build, publish | **Thu 19 Nov** |
-| `lab-03/` | a pipeline that does not repeat itself | Thu 26 Nov |
+| `lab-03/` | a pipeline that does not repeat itself | **Wed 2 Dec** |
 | `lab-04/` | infrastructure as code, and a load balancer | Thu 3 Dec |
 | `lab-05/` | three environments, no secrets in Git | Thu 10 Dec |
 | `lab-06/` | observability | Thu 17 Dec |
@@ -18,6 +18,12 @@ already in it — what is **missing** from a lab folder is the work, and that is
 | the final | — announced separately | Sun 20 Dec |
 
 All deadlines 23:59 Kyiv. Later titles may shift as the course goes; the dates will not.
+
+**Lab 3 is open, all three sections.** Caching came from lecture 4, reusable workflows from
+lecture 5, the composite action from practice 3 — nothing in it waits for a session that has not
+happened. It is also the first lab whose checks ask the GitHub API what really happened rather than
+only reading your files: whether a reusable workflow ran, which caches exist, how long your two
+runs really took, and whether a run was really cancelled.
 
 **Lab 2 opens in three parts.** Sections 1 and 2 are live now; section 3 — the published image —
 opens Thu 5 Nov, once the registry has been taught. The check for it exists from the start and is
