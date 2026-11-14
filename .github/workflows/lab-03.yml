@@ -46,9 +46,13 @@ jobs:
           section: cache
           path: lab-03
 
+  # ── bonus · reports, never fails the build ─────────────────────────────────
+  # The QA stage is a whole stage of a real pipeline and it is optional: pull the
+  # digest, stand the given stack up, drive it with the given suite.
   section-qa:
-    name: "section · qa"
+    name: "section · qa (bonus)"
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
@@ -57,7 +61,6 @@ jobs:
           section: qa
           path: lab-03
 
-  # ── bonus · reports, never fails the build ─────────────────────────────────
   section-aqa:
     name: "section · aqa (bonus)"
     runs-on: ubuntu-latest
