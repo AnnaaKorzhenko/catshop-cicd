@@ -19,9 +19,20 @@ downloading things you already had.
 ```
 app.py                  the same Flask app, unchanged — do not edit it
 requirements.txt        its three dependencies
-partner/mappings/       the partner's stubbed responses, for the QA bonus
+partner/mappings/       the partner's stubbed responses, behind a compose profile
 .env.example            copy to .env. Never commit .env
+
+qa/compose.qa.yaml      the stack the QA suite drives: the PULLED image, Postgres,
+                        and the partner behind a profile. Note what it does not have:
+                        a `build:`. It cannot have one
+qa/run.sh               pull · up · wait · drive · tear down. This is the file your
+                        QA workflow calls. Read it; it is forty lines
+qa/README.md            how to call it, and every variable it takes
 ```
+
+`qa/run.sh` is given because the QA half of a pipeline is always the same four moves, and this lab
+is about **where they sit in the pipeline**, not about writing them again. You may extend it. If
+you delete it the grader falls back to a bare container and says so.
 
 ## What you write
 
@@ -29,7 +40,7 @@ partner/mappings/       the partner's stubbed responses, for the QA bonus
 lab-03/Dockerfile                        lab 2's, ordered for the layer cache
 lab-03/requirements-dev.txt              whatever your suites need
 lab-03/tests/test_*.py                   the unit suite — lab 2's, carried over
-lab-03/qa/test_*.py                      section 3 — the AQA suite
+lab-03/qa/test_*.py                      section 3 — the AQA suite, and only this
 lab-03/published.txt                     the digest your pipeline promoted
 lab-03/CACHE.md                          section 2 — the two numbers and the two run URLs
 lab-03/qa/REGRESSION.md                  bonus
@@ -130,9 +141,20 @@ Two things decide whether the cache works at all, and both of them are in your h
 
 A unit test runs before anything exists. **AQA runs after**, against the thing that now does.
 
-Write `lab-03/qa/` — a suite that drives the running application **over HTTP**, from outside. It
-may not import `app`, and it may not use Flask's test client: if it can do either, it is a unit
-test wearing a QA hat and it will not notice a broken image.
+Write `lab-03/qa/test_*.py` — a suite that drives the running application **over HTTP**, from
+outside. It may not import `app`, and it may not use Flask's test client: if it can do either, it
+is a unit test wearing a QA hat and it will not notice a broken image.
+
+The stack it drives is given. One line stands it up:
+
+```bash
+QA_IMAGE=ghcr.io/you/catshop@sha256:... bash lab-03/qa/run.sh
+```
+
+That pulls the digest, starts it with Postgres behind a health gate, waits for an address that
+answers, runs your suite against it and tears the stack down. `QA_BASE_URL` is what it points your
+suite at, so **read the address from the environment** — in lab 5 that address is three different
+environments.
 
 Then wire it in:
 
@@ -166,10 +188,13 @@ points **your** suite at it, and requires your suite to pass against bytes it di
 Bonus checks run with `continue-on-error`, so a red bonus job cannot fail your pipeline.
 
 **+ The suite grows up.** Five scenarios or more, and at least one of them expecting a
-**failure** — a 404, a 502, a dependency that is not there. The stubbed partner in
-`partner/mappings/` is how you make `/price` testable without the real partner. Then write
+**failure** — a 404, a 502, a dependency that is not there. By default the partner is **not**
+started and `/price` answers 502; `QA_PROFILE=partner` starts the stub from `partner/mappings/`
+and it answers properly. That variable reaches your suite, so one case can assert both outcomes
+and the stack decides which applies — which is the move lab 5 makes with three environments. Then write
 `lab-03/qa/REGRESSION.md`: **one incident in two lines, and the case that exists because of it.**
-Run the suite over a **matrix**, and upload its report as an artifact — when the suite fails at
+Run the suite over a **matrix** — the two profiles are the obvious two rows — and upload its
+report as an artifact. `run.sh` already writes `lab-03/qa-report.xml`; when the suite fails at
 02:00 the log is gone and the report is not. Name the check a branch rule would require.
 
 **+ Two pushes, one run.** Add a `concurrency:` group and then **demonstrate it**: push twice in
