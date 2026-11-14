@@ -1,15 +1,12 @@
 # Lab 3 — a pipeline that does not repeat itself
 
-**Two sections, both open now. Due Wednesday 2 December, 23:59 Kyiv.**
+**Two sections. Due Wednesday 2 December, 23:59 Kyiv.**
 After the deadline the maximum for this lab is 80%.
 
-Caching came from lecture 4, reusable workflows and the concurrency identifier from lecture 5, the
-composite action from practice 3. Nothing here waits for a session that has not happened.
-
-Lab 2 left you a workflow that tests, builds and publishes. It is **one file that does everything
-once**. This lab is about what happens when that is no longer true — a second pipeline, a second
-repository, a QA suite somebody else owns — and about the two minutes you spend every run
-downloading things you already had.
+You have a workflow that tests, builds and publishes: **one file that does everything once.** This
+lab is about what happens when that is no longer true — a second pipeline, a second repository, a
+QA suite somebody else owns — and about the two minutes you spend every run downloading things you
+already had.
 
 **Three bonus sections sit on top**, and the first of them is a whole stage of a real pipeline:
 pull the image you published, stand it up, and drive it. They are worth going after.
@@ -37,9 +34,9 @@ about; putting a stage in a pipeline is.
 ## What you write
 
 ```
-lab-03/Dockerfile                        lab 2's, ordered for the layer cache
+lab-03/Dockerfile                        ordered for the layer cache
 lab-03/requirements-dev.txt              pytest and requests
-lab-03/tests/test_*.py                   the unit suite — lab 2's, carried over
+lab-03/tests/test_*.py                   the unit suite
 lab-03/CACHE.md                          section 2 — the two numbers and the two run URLs
 
 .github/workflows/lab-03-pipeline.yml    section 1, the caller — at the REPOSITORY ROOT
@@ -85,7 +82,7 @@ What follows says what each section has to **achieve**. It does not list the che
 
 ## Section 1 · one definition, called twice
 
-Take the pipeline you wrote in lab 2 and split it so that **nothing is defined twice**.
+Split your pipeline so that **nothing is defined twice**.
 
 - The test-and-build half becomes a **reusable workflow**: it takes arguments, and it hands
   something back — the thing the next job needs, which is the image reference.
@@ -107,8 +104,6 @@ version.** A branch is not a version.
 - One line: what would happen to your pipeline if the tag you call moved tonight.
 
 ## Section 2 · both caches, and the minutes
-
-Lab 2 had you cache something as a bonus. Now it is the work.
 
 There are **two** caches and they are not the same cache: the one that holds your dependencies, and
 the one that holds your image layers. Add both. Then do the thing the section is actually marked on
@@ -175,9 +170,8 @@ Then two things make it a stage rather than a demo:
   digest you are standing behind — and make it reachable only through QA. `lab-03/published.txt` is
   that record: one line, the digest, nothing else.
 
-Publishing before QA and promoting after it is the honest order, and it is what the examples
-repository does: the bytes go to the registry, the suite drives them, and only then does anything
-say *this is the one*.
+Publishing before QA and promoting after it is the honest order: the bytes go to the registry, the
+suite drives them, and only then does anything say *this is the one*.
 
 **In the pull request:** where the digest came from, and what the suite would and would not have
 caught — one line each.
@@ -188,9 +182,8 @@ Five scenarios are given. Add **your own**, in your own file beside them, and at
 expecting a **failure** — a 404, a 502, a dependency that is not there.
 
 `QA_PROFILE=partner` starts the stubbed partner, and that variable reaches the suite, so one case
-can assert both outcomes and the stack decides which applies. The two profiles are the obvious two
-rows of a **matrix**. Upload the suite's report as an **artifact** — when it fails at 02:00 the log
-is gone and the report is not.
+can assert both outcomes. The two profiles are the obvious two rows of a **matrix**. Upload the
+report as an **artifact** — when it fails at 02:00 the log is gone and the report is not.
 
 Then write `lab-03/qa/REGRESSION.md`: **one incident in two lines, and the case that exists because
 of it.** Name the check a branch rule would require.
@@ -221,5 +214,3 @@ through.
 
 **Two things score zero regardless of green checks:** a committed `.env` — the checks read git
 *history*, not just the working tree — and configuration you cannot explain.
-
-`lab-01/` and `lab-02/` are frozen. Nothing in this lab edits either of them.

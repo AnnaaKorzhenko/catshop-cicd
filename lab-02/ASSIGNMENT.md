@@ -3,9 +3,6 @@
 Three sections. **Due Thursday 19 November, 23:59 Kyiv.**
 After the deadline the maximum for this lab is 80%.
 
-**Sections 1 and 2 are open now. Section 3 opens Thursday 5 November**, once the registry has been
-taught. You can finish the first two before it does; nothing in them depends on it.
-
 ---
 
 ## What you are given
@@ -20,7 +17,7 @@ partner/mappings/       the partner's stubbed responses, for the bonus
 ## What you write
 
 ```
-lab-02/Dockerfile              an image for this app (lab 1's is a fine starting point)
+lab-02/Dockerfile              an image for this app
 lab-02/requirements-dev.txt    whatever your tests need
 lab-02/tests/test_*.py         section 1
 lab-02/published.txt           section 3 — one line, written by your pipeline
@@ -34,7 +31,7 @@ from**. Everything else lives inside `lab-02/`.
 
 ## The application
 
-Unchanged from lab 1, and still four endpoints:
+Four endpoints:
 
 | Endpoint | Depends on | Where it matters here |
 |---|---|---|
@@ -108,7 +105,7 @@ the workflow, not a personal access token.
   demonstrate it.
 - Your tag scheme, and **what breaks if two pushes produce the same tag**.
 
-## Section 3 · an image somebody else can pull  *(opens Thu 5 Nov)*
+## Section 3 · an image somebody else can pull
 
 Now prove the thing exists outside your laptop and outside your run.
 
@@ -149,8 +146,6 @@ Two things make this count rather than decorate:
 - **The cache has to actually exist.** The grader asks the GitHub API for your repository's caches
   and looks for the entry your workflow created — by key, then by id — and checks it is not empty.
   A `cache:` block that silently saved nothing will be visible here.
-
-Caching is marked properly in **lab 3**, on the minutes saved. This is the rehearsal.
 
 **+ The partner, stubbed.** Make `/price/MK-II` testable without the real partner: run
 `wiremock/wiremock:3.6.0` with the stubs in `partner/mappings/`, or fake the HTTP call in the suite.

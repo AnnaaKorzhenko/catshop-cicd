@@ -19,20 +19,6 @@ already in it — what is **missing** from a lab folder is the work, and that is
 
 All deadlines 23:59 Kyiv. Later titles may shift as the course goes; the dates will not.
 
-**Lab 3 is open: two required sections and three bonus ones.** Caching came from lecture 4,
-reusable workflows from lecture 5, the composite action from practice 3 — nothing in it waits for a
-session that has not happened. The first bonus is a whole stage of a real pipeline — pull the image
-you published, stand it up, drive it with the suite you were given — and it is **optional**: skip it
-and lose nothing but the marks.
-
-It is also the first lab whose checks ask the GitHub API what really happened rather than only
-reading your files: whether a reusable workflow ran, which caches exist, how long your two runs
-really took, and whether a run was really cancelled.
-
-**Lab 2 opens in three parts.** Sections 1 and 2 are live now; section 3 — the published image —
-opens Thu 5 Nov, once the registry has been taught. The check for it exists from the start and is
-simply red until you do the work, like every other check here.
-
 **Labs overlap.** An earlier one is still open when the next appears — that is slack for a bad week,
 not extra work. The content is serial, so putting one off blocks the next.
 
