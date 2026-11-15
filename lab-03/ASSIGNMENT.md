@@ -2,71 +2,84 @@
 
 **Two sections. Due Wednesday 2 December, 23:59 Kyiv.** After that, 80% maximum.
 
-## Given
-
-```
-app.py · requirements.txt · .env.example · partner/mappings/
-qa/compose.qa.yaml   the stack an AQA run needs. It pulls an image; it has no build:
-qa/test_smoke.py     five scenarios, over HTTP
-qa/README.md         how to run them
-```
-
-## You write
-
-```
-lab-03/Dockerfile · requirements-dev.txt · tests/test_*.py
-lab-03/CACHE.md
-.github/workflows/<caller>.yml · _build-and-test.yml
-.github/actions/<name>/action.yml
-
-bonus:  _qa.yml · published.txt · qa/test_<yours>.py · qa/REGRESSION.md · CONCURRENCY.md
-```
-
-Workflows live at the repository root — nowhere else runs. Not `lab-03.yml`; that is the grader.
-The app serves on container port `8080`.
+Given: `app.py`, `requirements.txt`, `.env.example`, `partner/mappings/`, and the QA suite and its
+stack at `qa/` — `compose.qa.yaml`, `test_smoke.py`, `README.md`. Do not change `app.py`.
 
 Push and read the checks. Each section is one check with a table behind it.
 
 ---
 
-## 1 · One definition, called twice
+## Section 1 · One definition, called twice
 
-- test-and-build becomes a **reusable workflow**: typed inputs, and the image reference handed back
-- a **composite action** inside it
-- testing and building appear in **one** file, not several
-- everything you call, you call at a version
+**Write:** `.github/workflows/<caller>.yml`, `.github/workflows/_build-and-test.yml`,
+`.github/actions/<name>/action.yml`, `lab-03/Dockerfile`, `lab-03/requirements-dev.txt`,
+`lab-03/tests/test_*.py`
 
-**Pull request:** what the reusable workflow cannot do that the composite action can · what you
-passed in, what came back, and the error you hit getting it · what happens if the tag you call
+**Requirements:**
+
+- a job in the caller runs `uses:` against your own workflow file
+- `_build-and-test.yml` declares `on: workflow_call` with **typed** inputs, and reads them
+- it declares an **output**, and the caller reads it back through `needs.<job>.outputs`
+- a **composite action** (`using: composite`) is called from inside the reusable workflow
+- `pytest` appears in **one** workflow file; the image is built in **one** workflow file
+- every third-party `uses:` is at a tag or a sha, never a branch
+- workflows live at the repository root, and none is named `lab-03.yml` — that is the grader
+
+**In the pull request:** what the reusable workflow cannot do that the composite action can · what
+you passed in, what came back, and the error you hit getting it · what happens if the tag you call
 moves tonight.
 
-## 2 · Both caches, and the minutes
+## Section 2 · Both caches, and the minutes
 
-Two caches: dependencies, and image layers. Add both. Then run cold, run warm, and write
-`lab-03/CACHE.md` with both timings, the saving, and both run URLs.
+**Write:** cache steps in your workflows, a reordered `lab-03/Dockerfile`, and `lab-03/CACHE.md`
 
-The grader reads those runs back out of the API and compares durations.
+**Requirements:**
 
-**Pull request:** the two numbers and which cache did the work · the key you tried first and why it
-was wrong · one thing you did not cache, and why.
+- a **dependency** cache: `actions/cache` or a `setup-*` `cache:` key
+- a **layer** cache: `cache-from` and `cache-to`, with `mode=max`
+- the key contains `hashFiles(...)`, and `restore-keys` gives it a prefix fallback
+- the Dockerfile copies and installs requirements **before** the source
+- `CACHE.md` holds a cold time, a warm time, the saving, and **both run URLs** — the grader reads
+  those runs back out of the API and compares their real durations
+
+**In the pull request:** the two numbers and which cache did the work · the key you tried first and
+why it was wrong · one thing you did not cache, and why.
 
 ---
 
-## Bonus
+## Bonus · reports, cannot cost you marks
 
-Bonus sections report and cannot cost you marks.
+### + The AQA stage
 
-**+ The AQA stage.** A job that takes the digest your build produced, stands up `qa/compose.qa.yaml`,
-runs `qa/`, and tears it down. The digest, never a tag. Something must **depend** on it: make the
-promotion — `lab-03/published.txt`, one line — reachable only through QA. Steps in the job, not a
-script.
+**Write:** `.github/workflows/_qa.yml` (or the job wherever you put it), `lab-03/published.txt`
 
-**+ Your own scenarios.** Three or more in your own file beside the given five, one expecting a
-failure. `QA_PROFILE=partner` is the second row of a matrix. Upload the report. Then
-`qa/REGRESSION.md`: one incident, and the case that exists because of it.
+**Requirements:**
 
-**+ Concurrency.** A group, demonstrated: push twice, watch the first run die. `CONCURRENCY.md` —
-both run URLs, what was cancelled, why that one was safe to cancel.
+- the job is handed the **digest** your build produced, never a tag, and `latest` appears nowhere
+- it stands up `lab-03/qa/compose.qa.yaml`, runs `lab-03/qa`, and tears the stack down
+- the pull, the stack and the suite are **steps in the job**, not a script
+- `published.txt` is one line, the digest, and the job that writes it is reachable **only through
+  QA**
+- `qa/compose.qa.yaml` keeps pulling an image: no `build:` in it
+- the app serves on container port `8080`
+
+**In the pull request:** where the digest came from · what the suite would and would not have caught.
+
+### + Your own scenarios
+
+**Write:** `lab-03/qa/test_<yours>.py`, `lab-03/qa/REGRESSION.md`
+
+**Requirements:** three or more scenarios of your own beside the given five · one of them expects a
+failure · the suite runs over a **matrix** (`QA_PROFILE=partner` is the second row) · the report is
+uploaded as an artifact · `REGRESSION.md` names one incident and the case that exists because of it.
+
+### + Concurrency
+
+**Write:** a `concurrency:` block, `lab-03/CONCURRENCY.md`
+
+**Requirements:** the group is keyed on the ref, not a constant · `cancel-in-progress` is not a bare
+`true` on the publishing path · a run on your branch was really cancelled · `CONCURRENCY.md` has
+both run URLs, what was cancelled, and why that one was safe.
 
 ---
 

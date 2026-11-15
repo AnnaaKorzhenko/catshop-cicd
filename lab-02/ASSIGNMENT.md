@@ -2,23 +2,8 @@
 
 **Three sections. Due Thursday 19 November, 23:59 Kyiv.** After that, 80% maximum.
 
-## Given
-
-```
-app.py · requirements.txt     the Flask app — do not change it
-partner/mappings/             the partner's stubbed responses, for the bonus
-.env.example                  copy to .env. Never commit .env
-```
-
-## You write
-
-```
-lab-02/Dockerfile · requirements-dev.txt · tests/test_*.py · published.txt
-lab-02/CACHE.md                          bonus
-.github/workflows/publish-lab-02.yml     at the repository root
-```
-
-Workflows live at the repository root — nowhere else runs. The app serves on container port `8080`.
+Given, inside `lab-02/`: `app.py` and `requirements.txt` (do not change them),
+`partner/mappings/`, `.env.example` — copy it to `.env`, never commit it.
 
 | Endpoint | Depends on | Section |
 |---|---|---|
@@ -27,60 +12,68 @@ Workflows live at the repository root — nowhere else runs. The app serves on c
 | `GET /visits` | our own state | 1, 3 |
 | `GET /price/<sku>` | an API we do not own | bonus |
 
-Push and read the checks; each section is one check with a table behind it.
+Push and read the checks. Each section is one check with a table behind it.
 
 ---
 
-## 1 · A suite that would notice
+## Section 1 · A suite that would notice
 
-Write tests and make them pass. `pytest` exiting 0 is not the bar: **break the app on purpose and
-your suite must go red.** `/price` needs a partner that is not there — that one is the bonus.
+**Write:** `lab-02/tests/test_*.py`, `lab-02/requirements-dev.txt`
 
-**Pull request:** the one-line mutation you made and the test output that caught it, and which test
-caught it · one test you wrote first and deleted, with the reason · how long the suite takes, and
-whether that is fast enough for every push.
+**Requirements:**
 
-## 2 · One workflow: test, build, publish
+- `pytest` is a declared dependency, and the suite passes
+- at least four tests, and they import the app rather than testing Flask
+- **break `/health` on purpose and the suite goes red** — a suite that cannot fail is worth nothing
+- `/price` needs a partner that is not there: that one is the bonus
 
-A push runs the suite, builds the image, publishes it to **GHCR**.
+**In the pull request:** the one-line mutation and the output that caught it, and which test caught
+it · one test you wrote first and deleted, with the reason · how long the suite takes, and whether
+that is fast enough for every push.
 
-- a red suite must not be able to publish — structurally, not by ordering
-- `latest` is rejected; tag something that names one build
-- label the image with the commit it was built from, `org.opencontainers.image.revision`
+## Section 2 · One workflow: test, build, publish
+
+**Write:** `.github/workflows/publish-lab-02.yml` — at the repository root, nowhere else runs
+
+**Requirements:**
+
+- one workflow, three stages: the suite, a docker build, a publish to **GHCR**
+- the publish job `needs:` the test job, so **a red suite structurally cannot publish**
+- `latest` is rejected — tag something that names one build
+- the image is labelled `org.opencontainers.image.revision` with the commit it was built from
 
 You will meet a `403` on the first push to GHCR. The fix is one block in the workflow, not a
 personal access token.
 
-**Pull request:** the 403 and the exact change that fixed it, plus why the token was there but could
-not do this · what happens on a fork's pull request, in two sentences · your tag scheme, and what
-breaks if two pushes produce the same tag.
+**In the pull request:** the 403 and the exact change that fixed it, plus why the token was there
+but could not do this · what happens on a fork's pull request, in two sentences · your tag scheme,
+and what breaks if two pushes produce the same tag.
 
-## 3 · An image somebody else can pull
+## Section 3 · An image somebody else can pull
 
-One line in `lab-02/published.txt`, nothing else:
+**Write:** `lab-02/published.txt`
 
-```
-ghcr.io/<account>/<image>@sha256:<64 hex characters>
-```
+**Requirements:**
 
-A tag is not accepted. The grader pulls exactly that, runs it, probes it, and checks the commit
-label names a commit in your repository — so an image built on your laptop fails. The package must
-be **public**; GHCR packages start private.
+- one line, nothing else: `ghcr.io/<account>/<image>@sha256:<64 hex characters>`
+- a tag is not accepted
+- the package is **public** — GHCR packages start private
+- the image runs and answers `/health` and `/visits` when pulled by that digest
+- its revision label names a commit that is really in your repository, so an image built on your
+  laptop fails
 
-**Pull request:** where the digest came from, pasted from the step that produced it · tag versus
-digest, with one scenario where the difference is the whole story · the package's visibility, where
-you changed it and what it means.
+**In the pull request:** where the digest came from, pasted from the step that produced it · tag
+versus digest, with one scenario where the difference is the whole story · the package's visibility,
+where you changed it and what it means.
 
 ---
 
-## Bonus
+## Bonus · reports, cannot cost you marks
 
-Bonus sections report and cannot cost you marks.
-
-**+ Cache something, and prove it.** Dependencies, Docker layers or both. Run cold, run warm, write
-`lab-02/CACHE.md` with both timings and one sentence on what got faster. Key it on something that
-changes — the grader asks the API for the entry your workflow created, by key then by id, and checks
-it is not empty.
+**+ Cache something, and prove it.** Dependencies, Docker layers or both. Key it on something that
+changes. Run cold, run warm, and write `lab-02/CACHE.md` with both timings and one sentence on what
+got faster. The grader asks the API for the entry your workflow created, by key then by id, and
+checks it is not empty.
 
 **+ The partner, stubbed.** Make `/price/MK-II` testable without the real partner —
 `wiremock/wiremock:3.6.0` with the stubs in `partner/mappings/`, or fake the HTTP call. Say which
