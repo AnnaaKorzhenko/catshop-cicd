@@ -60,6 +60,7 @@ jobs:
         with:
           section: qa
           path: lab-03
+          bonus: "true"
 
   section-aqa:
     name: "section · aqa (bonus)"
@@ -72,6 +73,7 @@ jobs:
         with:
           section: aqa
           path: lab-03
+          bonus: "true"
 
   section-concurrency:
     name: "section · concurrency (bonus)"
@@ -84,3 +86,4 @@ jobs:
         with:
           section: concurrency
           path: lab-03
+          bonus: "true"
