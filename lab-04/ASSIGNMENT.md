@@ -86,7 +86,7 @@ them, is the bonus and the next lab.
   not at whatever the registry served today
 - the provider's `host` comes from a **variable**. The workflow sets it as `TF_VAR_docker_host`; a
   default that only works on your own machine is a default that breaks in CI
-- **four names are fixed**, because one grader reads thirty-two configurations: the variables
+- **four names are fixed**, because one grader reads every configuration in the class: the variables
   `docker_host`, `port` and `bind_ip`, and the output `url`. Everything else is yours
 - one `docker_network`, one `docker_volume`, and one `docker_container` that uses both
 - the image is **`nginx:1.27-alpine`** with `keep_locally = true`. No `build` block in this lab
@@ -193,7 +193,7 @@ research, not a deployment.
 
 ## The server, and how to be a good neighbour
 
-Thirty-two of you share one machine. It is not generous, and the limits are real rather than
+You share one machine with the rest of the class. It is not generous, and the limits are real rather than
 advisory:
 
 | | |
