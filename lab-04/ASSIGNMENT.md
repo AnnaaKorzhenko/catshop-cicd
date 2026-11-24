@@ -1,13 +1,13 @@
 # Lab 4 — declare the place, do not click it
 
-**Two sections, plus bonuses. Due Wednesday 9 December, 23:59 Kyiv.** After that, 80% maximum.
+**Three sections, plus bonuses. Due Wednesday 9 December, 23:59 Kyiv.** After that, 80% maximum.
 
 This lab runs on a **real server**, at a real URL, with your state in a real backend. It costs you
 nothing: you are given an account on the course server, and the state backend has a free tier. No
 cloud account, no card, no bill — and no application yet either. That is the next lab. This one is
 about the place the application will live, and about writing it down instead of clicking it.
 
-Your stack answers at:
+Your place answers at:
 
 ```
 https://grizik.tech/<your-github-login>/
@@ -39,7 +39,7 @@ and is refused.
 
 ### Your whole workflow file
 
-You do not write the deployment plumbing. Copy this:
+You do not write the deployment plumbing. Copy this into `.github/workflows/lab-04.yml`:
 
 ```yaml
 name: lab 4
@@ -73,8 +73,9 @@ turn.
 
 ## Section 1 · The place, declared
 
-A proxy, two copies of a web server behind it, and a volume. Public images only — you build nothing
-and you start nothing by hand.
+A network, a volume, and one web server on it. Public images only — you build nothing and you start
+nothing by hand. There is deliberately **one** copy: more than one, with something balancing between
+them, is the bonus and the next lab.
 
 **Write:** `lab-04/terraform/main.tf`, `lab-04/terraform/variables.tf`,
 `lab-04/terraform/outputs.tf`, `lab-04/terraform/backend.tf`, `lab-04/terraform/nginx.conf.tftpl`
@@ -87,23 +88,22 @@ and you start nothing by hand.
   default that only works on your own machine is a default that breaks in CI
 - **four names are fixed**, because one grader reads thirty-two configurations: the variables
   `docker_host`, `port` and `bind_ip`, and the output `url`. Everything else is yours
-- one `docker_network`, one `docker_volume`, **two** web containers from a **single** resource using
-  `count`, and one proxy container in front of them
-- the images are **`nginx:1.27-alpine`** with `keep_locally = true`. No `build` block in this lab
-- `nginx.conf.tftpl` is rendered with `templatefile(...)` and the backend names come **from the
-  resource**. If you typed `web-0` into that template by hand, raising `count` to three silently does
-  nothing
-- the proxy publishes on `var.port`, bound to **`var.bind_ip`**. Both are given to you. A container
+- one `docker_network`, one `docker_volume`, and one `docker_container` that uses both
+- the image is **`nginx:1.27-alpine`** with `keep_locally = true`. No `build` block in this lab
+- `nginx.conf.tftpl` is **rendered with `templatefile(...)`**, taking its values from variables. A
+  file with no interpolation in it is a static file with a `.tftpl` name, and `templatefile()` is
+  doing nothing
+- the container publishes `var.port`, bound to **`var.bind_ip`**. Both are given to you. A container
   bound to `0.0.0.0` on a shared server is a second front door nobody is watching
-- your two web containers must be **distinguishable**: `GET /whoami` through the proxy returns the
-  hostname of whichever copy answered. nginx does this on its own — `return 200 "$hostname\n";` — so
-  no application code is needed
-- `GET /health` through the proxy returns `200`
+- `GET /health` through your URL returns `200`, and `GET /whoami` returns the container's hostname.
+  nginx does both on its own — `return 200 "ok\n";` and `return 200 "$hostname\n";` — so no
+  application code is needed
 - `terraform init && terraform apply` is the whole command. No shell script, no `local-exec`, no
   `compose` file hiding underneath
 
-**In the pull request:** what `terraform apply` did in what order, and what in your file decided
-that order · the line in `nginx.conf.tftpl` that makes the pool follow `count`.
+**In the pull request:** what `terraform apply` created in what order, and what in your file decided
+that order · what `templatefile` put into the rendered configuration, and where those values came
+from.
 
 ## Section 2 · The state is the point
 
@@ -123,52 +123,71 @@ that order · the line in `nginx.conf.tftpl` that makes the pool follow `count`.
 **In the pull request:** where your state lives now, and what would have happened on the second run
 if it had lived on the runner · what `terraform destroy` printed.
 
+## Section 3 · Drift, and the plan that notices it
+
+**Write:** `lab-04/DRIFT.md`
+
+Stop your container behind Terraform's back, look at what each side believes, then put it back with
+Terraform rather than by hand. You have no shell on the server, so you do this through the Docker
+API your pipeline already talks to — one step in a workflow, with `DOCKER_HOST` already set for you.
+
+**Requirements:**
+
+- the container is stopped **without Terraform**, so the state still says it exists
+- your URL stops answering. That is the finding, not a failure: with one copy there is nothing to
+  take over, and the proxy in front has nothing to route to
+- `terraform plan` notices, exits **2**, and reports exactly **one** resource to put back — not the
+  network and not the volume, which really are still there
+- `terraform apply` repairs it, and the URL answers `200` again
+- `DRIFT.md` records the `plan` line as it printed, what `apply` then did, and the one sentence that
+  explains **why Terraform knew** — the mechanism, not the observation
+
+> Your place is removed automatically after 48 hours of nobody touching it. That is not a
+> malfunction: it is this same experiment arriving by itself, and re-running your pipeline is the
+> repair.
+
+**In the pull request:** why `plan` proposed one resource and not three · what would have happened if
+you had deleted the workspace's state instead of the container.
+
 ---
 
 ## Bonus · reports, cannot cost you marks
 
 None of these costs money. Do as many as you like, or none.
 
-### + Drift, and the plan that notices it
+### + More than one of it, and something in front
 
-**Write:** `lab-04/DRIFT.md`
+Next lab's lesson, done early. Raise the web server to **two copies from one resource with `count`**,
+put an nginx proxy in front of them, and render the proxy's upstream list from the resource.
 
-Stop one of the two web containers by hand. You have no shell on the server, so do it the way the
-server allows — through the Docker API your pipeline already talks to, or with the two commands you
-are given:
+- one resource with `count`, never two hand-written blocks that happen to look alike
+- the upstream list is **generated** — a `%{ for ... }` loop over the resource's names. If you typed
+  `web-0` and `web-1` into the template by hand, raising `count` to three silently does nothing
+- several requests to `/whoami` return **more than one** hostname
+- now stop one copy by hand and the place **keeps answering** `200`. That needs
+  `proxy_next_upstream` and a `proxy_connect_timeout` short enough for the retry to happen inside
+  the request — the half of a load balancer nobody writes down
 
-```
-ssh studentNNN@grizik.tech catshop-ps
-ssh studentNNN@grizik.tech "catshop-logs <container>"
-```
-
-- with one copy stopped, the stack **still answers**. Requests through the proxy return `200`, not
-  `502`, and not a hang. That needs a `proxy_next_upstream` rule, which is the half of a load
-  balancer nobody writes down
-- `terraform plan` notices, and reports exactly **one** resource to put back
-- `DRIFT.md` records the `plan` line as it printed, what `apply` then did, and the one sentence that
-  explains why Terraform knew
-
-> Your stack is removed automatically after 48 hours of nobody touching it. That is not a
-> malfunction: it is the same drift arriving by itself, and re-running your pipeline is the repair.
-> Say so in `DRIFT.md` if it happens to you.
-
-### + Three, without editing the template
-
-Raise `count` to three, apply, and show the rendered proxy configuration picked up the third backend
-with no edit to `nginx.conf.tftpl`. Put the before and after of the rendered file in the pull
-request. Then put it back to two.
+**In the pull request:** the rendered upstream block before and after you changed `count` · what the
+proxy did when one copy went away, and the line that made it do that.
 
 ### + The state is a secret
 
-Find a generated value inside your state — in HCP, the workspace's state is readable in the UI — and
+Find a generated value inside your state — in HCP, a workspace's state is readable in the UI — and
 say in the pull request who can read it there, and what that means for the database password you
 will have in the next lab.
 
 ### + Two applies at once
 
-Start a second run while the first is still applying. Say what the second one said, and which
-part of the system said it. One sentence on what would have happened without it.
+Start a second run while the first is still applying. Say what the second one said, and which part
+of the system said it. One sentence on what would have happened without it.
+
+### + What this would cost rented
+
+Price the same shape at a cloud you do **not** have an account with: a load balancer, two small
+instances, a managed database. One line per resource, what the whole thing costs a month if nobody
+ever sends it a request, and which single line is the most expensive. No account, no card — this is
+research, not a deployment.
 
 ---
 
