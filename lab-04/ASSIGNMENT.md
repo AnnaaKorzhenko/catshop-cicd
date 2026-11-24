@@ -200,7 +200,7 @@ advisory:
 |---|---|
 | memory | 320 MB, plus 128 MB of swap |
 | CPU | half a core |
-| processes | 150 |
+| processes | 512 |
 | disk | 2 GB |
 | deployments at once | **10 across the whole class** |
 
