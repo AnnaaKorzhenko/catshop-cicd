@@ -1,10 +1,11 @@
 # Lab 4 — declare the place, do not click it
 
-**Three sections. Due Wednesday 9 December, 23:59 Kyiv.** After that, 80% maximum.
+**Two sections, plus bonuses. Due Wednesday 9 December, 23:59 Kyiv.** After that, 80% maximum.
 
-This lab runs on a **real server**, at a real URL, with your state in a real backend. You are given
-an account on the course server and nothing else. No application yet — that is the next lab. This
-one is about the place the application will live, and about writing it down instead of clicking it.
+This lab runs on a **real server**, at a real URL, with your state in a real backend. It costs you
+nothing: you are given an account on the course server, and the state backend has a free tier. No
+cloud account, no card, no bill — and no application yet either. That is the next lab. This one is
+about the place the application will live, and about writing it down instead of clicking it.
 
 Your stack answers at:
 
@@ -23,7 +24,7 @@ there means you are not on the roster yet, which is not something you can fix fr
 
 | step | where | what to do |
 |---|---|---|
-| 1 | [app.terraform.io](https://app.terraform.io) | sign up (free), then **Account settings → Tokens → Create an API token**. A *user* token. An organization token cannot run a plan |
+| 1 | [app.terraform.io](https://app.terraform.io) | sign up (free), then **Account settings → Tokens → Create an API token**. A *user* token: an organization token cannot run a plan |
 | 2 | your repository | variable `TF_CLOUD_ORGANIZATION` = your HCP organization · secret `TF_API_TOKEN` = that token |
 | 3 | your HCP workspace | create `lab-04`, and set **Execution Mode: Local** |
 
@@ -61,7 +62,7 @@ jobs:
 
 Note the `paths:` filter. It covers the Terraform folder and nothing else: editing a README is not a
 reason to touch infrastructure. Note also that it plans on a pull request and applies on `main` —
-the shape lecture 6 argued for, and the reason you will see your plan before it happens.
+the shape lecture 6 argued for, and the reason you see your plan before it happens.
 
 There is **no secret for the server** anywhere in that file. Your pipeline proves who it is with a
 token GitHub mints for the run, and gets back a certificate valid for one hour that can run exactly
@@ -73,7 +74,7 @@ turn.
 ## Section 1 · The place, declared
 
 A proxy, two copies of a web server behind it, and a volume. Public images only — you build nothing
-and start nothing by hand.
+and you start nothing by hand.
 
 **Write:** `lab-04/terraform/main.tf`, `lab-04/terraform/variables.tf`,
 `lab-04/terraform/outputs.tf`, `lab-04/terraform/backend.tf`, `lab-04/terraform/nginx.conf.tftpl`
@@ -82,13 +83,10 @@ and start nothing by hand.
 
 - `required_version` is set, and `required_providers` pins **`kreuzwerker/docker`** at a version —
   not at whatever the registry served today
-- the provider's `host` comes from a **variable**. The workflow sets it for you as
-  `TF_VAR_docker_host`; a default that only works on your own machine is a default that breaks in CI
+- the provider's `host` comes from a **variable**. The workflow sets it as `TF_VAR_docker_host`; a
+  default that only works on your own machine is a default that breaks in CI
 - **four names are fixed**, because one grader reads thirty-two configurations: the variables
   `docker_host`, `port` and `bind_ip`, and the output `url`. Everything else is yours
-- `backend.tf` declares `cloud {}` — **empty**. Organization and workspace come from the
-  environment, which is what lets one configuration work for everyone. A `backend "local"` block, or
-  no block at all, fails this section
 - one `docker_network`, one `docker_volume`, **two** web containers from a **single** resource using
   `count`, and one proxy container in front of them
 - the images are **`nginx:1.27-alpine`** with `keep_locally = true`. No `build` block in this lab
@@ -98,21 +96,40 @@ and start nothing by hand.
 - the proxy publishes on `var.port`, bound to **`var.bind_ip`**. Both are given to you. A container
   bound to `0.0.0.0` on a shared server is a second front door nobody is watching
 - your two web containers must be **distinguishable**: `GET /whoami` through the proxy returns the
-  hostname of whichever copy answered. nginx can do this on its own — `return 200 "$hostname\n";` —
-  so no application code is needed
+  hostname of whichever copy answered. nginx does this on its own — `return 200 "$hostname\n";` — so
+  no application code is needed
 - `GET /health` through the proxy returns `200`
-- `outputs.tf` exports `url`, and it is `var.public_url` when the workflow sets one, so the same
-  configuration is true on your laptop and on the server
 - `terraform init && terraform apply` is the whole command. No shell script, no `local-exec`, no
   `compose` file hiding underneath
-- **a second `terraform plan` reports no changes.** This is graded on the exit code, not on the word
-  "No changes." in a log
 
 **In the pull request:** what `terraform apply` did in what order, and what in your file decided
-that order · the line in `nginx.conf.tftpl` that makes the pool follow `count` · where your state
-lives now, and what would have happened on the second run if it had lived on the runner.
+that order · the line in `nginx.conf.tftpl` that makes the pool follow `count`.
 
-## Section 2 · State is not reality
+## Section 2 · The state is the point
+
+**Write:** `lab-04/terraform/backend.tf`, and a `.gitignore` that means it
+
+**Requirements:**
+
+- `backend.tf` declares `cloud {}` — **empty**. Organization and workspace come from the
+  environment, which is what lets one configuration work for everyone. A `backend "local"` block, or
+  no block at all, fails this section
+- **a second `terraform plan` reports no changes.** Graded on the exit code, not on the words "No
+  changes." appearing in a log
+- no state file is committed, and `git log` has never seen one. With `cloud {}` there should be
+  nothing to commit — if there is, something is configured wrongly
+- `terraform destroy` leaves nothing behind: no container, no network, no volume
+
+**In the pull request:** where your state lives now, and what would have happened on the second run
+if it had lived on the runner · what `terraform destroy` printed.
+
+---
+
+## Bonus · reports, cannot cost you marks
+
+None of these costs money. Do as many as you like, or none.
+
+### + Drift, and the plan that notices it
 
 **Write:** `lab-04/DRIFT.md`
 
@@ -125,48 +142,33 @@ ssh studentNNN@grizik.tech catshop-ps
 ssh studentNNN@grizik.tech "catshop-logs <container>"
 ```
 
-Then look at what each side believes.
-
-**Requirements:**
-
 - with one copy stopped, the stack **still answers**. Requests through the proxy return `200`, not
-  `502`, and not a hang
-- `terraform plan` notices. It reports exactly **one** resource to put back, and the rest unchanged
-- `DRIFT.md` records: the `plan` line as it printed, what `apply` then did, and the one sentence that
+  `502`, and not a hang. That needs a `proxy_next_upstream` rule, which is the half of a load
+  balancer nobody writes down
+- `terraform plan` notices, and reports exactly **one** resource to put back
+- `DRIFT.md` records the `plan` line as it printed, what `apply` then did, and the one sentence that
   explains why Terraform knew
-- no state file is committed, and `git log` has never seen one. With `cloud {}` there should be
-  nothing to commit — if there is, something is configured wrongly
 
 > Your stack is removed automatically after 48 hours of nobody touching it. That is not a
-> malfunction: it is the same drift you created on purpose, and re-running your pipeline is the
-> repair. Say so in `DRIFT.md` if it happens to you.
+> malfunction: it is the same drift arriving by itself, and re-running your pipeline is the repair.
+> Say so in `DRIFT.md` if it happens to you.
 
-**In the pull request:** what the state said and what the machine said · why the proxy did not need
-to be told that a backend had gone · what would have happened if you had deleted the workspace's
-state instead of a container.
+### + Three, without editing the template
 
-## Section 3 · The same shape, rented
+Raise `count` to three, apply, and show the rendered proxy configuration picked up the third backend
+with no edit to `nginx.conf.tftpl`. Put the before and after of the rendered file in the pull
+request. Then put it back to two.
 
-The same three things, written for a cloud you are **not** going to run. This section never leaves
-`plan` and never needs an account.
+### + The state is a secret
 
-**Write:** `lab-04/cloud/main.tf`, `lab-04/cloud/variables.tf`, `lab-04/COST.md`
+Find a generated value inside your state — in HCP, the workspace's state is readable in the UI — and
+say in the pull request who can read it there, and what that means for the database password you
+will have in the next lab.
 
-**Requirements:**
+### + Two applies at once
 
-- one cloud, chosen by you, declared properly: a **load balancer**, **two** instances, and a
-  **managed database** — so pick one that has one: AWS, Google, Azure, DigitalOcean, Scaleway
-- `terraform init -backend=false && terraform validate` passes with **no credentials anywhere**
-- every data source is **parameterised**. A lookup that goes and asks the cloud something — an AMI
-  by name, a zone listing — turns this into a configuration nobody can check
-- a health check is declared, and its path is `/health`
-- there is **no NAT gateway** in the file. It is the ~$32-a-month line nobody chose
-- a `backend` block is written and committed, even though nothing here uses it
-- `COST.md` prices your file: every resource, what it costs a month at rest, what the whole thing
-  costs if nobody ever sends it a request, and which single line is the most expensive
-
-**In the pull request:** the resource you expected to be free and was not · what your file would
-actually create, in order · one thing `validate` cannot tell you.
+Start a second run while the first is still applying. Say what the second one said, and which
+part of the system said it. One sentence on what would have happened without it.
 
 ---
 
