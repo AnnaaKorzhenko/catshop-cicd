@@ -1,0 +1,1 @@
+ghcr.io/annaakorzhenko/catshop-cicd@sha256:7452b0f196b0e3f67a7254616044b7fb9bcfa04f315e35c3fc24b71415ea4f4c
